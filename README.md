@@ -1,1 +1,1 @@
-# kaizen-hub
+index.html
