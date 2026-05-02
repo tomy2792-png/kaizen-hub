@@ -1,0 +1,459 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--color-background-primary);color:var(--color-text-primary)}
+.nav-btn{border:none;padding:10px 14px;background:transparent;cursor:pointer;font-size:12px;border-bottom:2px solid transparent;white-space:nowrap;color:var(--color-text-secondary);transition:all .15s}
+.nav-btn.active{color:#3B6D11;border-bottom-color:#3B6D11;font-weight:500}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px}
+.kpi{background:var(--color-background-secondary);border-radius:8px;padding:14px;border:0.5px solid var(--color-border-tertiary)}
+.badge{font-size:11px;padding:2px 9px;border-radius:10px;display:inline-block}
+.badge-green{background:#EAF3DE;color:#3B6D11}
+.badge-blue{background:var(--color-background-info);color:var(--color-text-info)}
+.badge-amber{background:var(--color-background-warning);color:var(--color-text-warning)}
+.badge-gray{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.step-circle{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.btn-primary{background:#3B6D11;color:white;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500}
+.btn-secondary{background:transparent;color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px}
+.filter-btn{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);padding:4px 12px;border-radius:12px;cursor:pointer;font-size:11px}
+.filter-btn.active{background:#EAF3DE;color:#3B6D11;border-color:#C0DD97}
+.hub-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.progress-track{background:var(--color-background-secondary);border-radius:4px;height:4px;overflow:hidden}
+.check-row{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;cursor:pointer;margin-bottom:8px;transition:all .15s}
+.check-row.checked{border-color:#3B6D11;background:#EAF3DE}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+textarea,select,input[type=text]{width:100%;padding:8px 12px;border:0.5px solid var(--color-border-secondary);border-radius:8px;background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;font-family:inherit}
+textarea{resize:vertical;min-height:70px}
+</style>
+
+<div id="app"></div>
+
+<script>
+const DATA = {
+  oee: [54,57,61,63,66,70,73,75,78],
+  meses: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep'],
+  kaizens: [
+    {id:'KZN-2026-041',titulo:'Reducción temperatura tostado almendra',area:'Producción',estado:'EJECUCIÓN',ahorro:'€18,400',pct:62,dias:12},
+    {id:'KZN-2026-039',titulo:'Protocolo limpieza boixet entre lotes',area:'Calidad',estado:'VALIDACIÓN',ahorro:'€7,200',pct:82,dias:5},
+    {id:'KZN-2026-038',titulo:'Calibración detector metales línea 2',area:'Seg. Alimentaria',estado:'APROBADO',ahorro:'€12,600',pct:25,dias:2},
+    {id:'KZN-2026-035',titulo:'Optimización molido pasta almendra',area:'Mantenimiento',estado:'EJECUCIÓN',ahorro:'€9,100',pct:55,dias:18},
+    {id:'KZN-2026-033',titulo:'Reducción consumo agua CIP',area:'Ambiental',estado:'CERRADO',ahorro:'€4,800',pct:100,dias:0},
+  ],
+  hub: [
+    {id:'HUB-447',cat:'Eficiencia energética',titulo:'Optimización ciclos horno tostado',problema:'Consumo excesivo de gas en arranque de campaña',solucion:'Perfil de temperatura escalonado: reduce picos de consumo en arranque',resultado:'-11% consumo gas',maquina:'Tostador esférico 200kg',rep:7},
+    {id:'HUB-441',cat:'Reducción mermas',titulo:'Ajuste tiempo molido en boixet',problema:'Residuos de pasta en paredes del boixet al finalizar ciclo',solucion:'Reducir velocidad últimos 3 min + ciclo de raspado automático',resultado:'-23% merma molido',maquina:'Boixet 80L',rep:12},
+    {id:'HUB-438',cat:'Seg. alimentaria',titulo:'Protocolo verificación detector metales',problema:'Falsos positivos generaban 2-4 paradas por turno',solucion:'Calibración cada 2h con piezas patrón + registro digital en plataforma',resultado:'-80% alertas falsas',maquina:'Detector metales',rep:9},
+    {id:'HUB-431',cat:'Mantenimiento',titulo:'Sustitución preventiva válvulas vapor',problema:'Roturas inesperadas de válvulas boixet 1-2 veces/campaña',solucion:'Cambio programado a las 3.800h evita rotura durante producción',resultado:'0 roturas campaña',maquina:'Sistema vapor boixet',rep:15},
+  ],
+  ranking:[
+    {pos:1,n:'J. Hernández',area:'Producción',pts:890,ins:'Ahorrador',k:7},
+    {pos:2,n:'M. Torres',area:'Calidad',pts:760,ins:'Implementador',k:6},
+    {pos:3,n:'A. Martínez',area:'Mantenimiento',pts:640,ins:'Iniciador',k:5},
+    {pos:4,n:'R. Gómez',area:'Producción',pts:520,ins:'Iniciador',k:4},
+    {pos:5,n:'L. Pérez',area:'Seg. Alimentaria',pts:430,ins:'Revisor Ágil',k:3},
+  ]
+};
+
+let state = {
+  screen:'dashboard',
+  filter:'Todos',
+  step:0,
+  submitted:false,
+  desc:'',
+  area:'',
+  grav:'MEDIA',
+  whys:['','','','',''],
+  impacto:[],
+  replicated:{}
+};
+
+const WHY_Q = [
+  '¿Por qué ocurre este problema?',
+  '¿Por qué ocurre esa causa?',
+  '¿Por qué existe esa condición?',
+  '¿Por qué no se ha resuelto antes?',
+  '¿Cuál es la causa raíz que lo perpetúa?'
+];
+
+const AREAS = [
+  {k:'alimentaria',l:'Seguridad Alimentaria / Inocuidad',s:'Asigna: Resp. Calidad + Técnico APPCC'},
+  {k:'laboral',l:'Seguridad Laboral del personal',s:'Asigna: Resp. PRL + RRHH'},
+  {k:'eficiencia',l:'Eficiencia Productiva / Mermas',s:'Asigna: Jefe Producción + Calidad'},
+  {k:'maquinaria',l:'Equipos y Maquinaria',s:'Asigna: Jefe Mantenimiento'},
+  {k:'sostenibilidad',l:'Sostenibilidad / Medio Ambiente',s:'Asigna: Resp. Ambiental'},
+  {k:'compras',l:'Compras / Proveedores',s:'Asigna: Resp. Compras'},
+];
+
+function estadoBadge(e) {
+  if(e==='CERRADO') return '<span class="badge badge-green">'+e+'</span>';
+  if(e==='EJECUCIÓN') return '<span class="badge badge-blue">'+e+'</span>';
+  return '<span class="badge badge-amber">'+e+'</span>';
+}
+
+function renderHeader(){
+  return `<div style="border-bottom:0.5px solid var(--color-border-tertiary);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;background:#3B6D11;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:white">K</div>
+      <div>
+        <div style="font-weight:500;font-size:13px">KAIZEN-HUB</div>
+        <div style="font-size:11px;color:var(--color-text-secondary)">Confectionary Holding · Jijona</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:28px;height:28px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#3B6D11">GB</div>
+      <div>
+        <div style="font-size:12px;font-weight:500">G. Bautista</div>
+        <div style="font-size:11px;color:var(--color-text-secondary)">Proyecto Final · CIPFP LdV</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNav(){
+  const items=[{id:'dashboard',l:'Dashboard'},{id:'nueva',l:'Nueva propuesta'},{id:'activos',l:'Kaizens activos'},{id:'hub',l:'HUB Sectorial'},{id:'incentivos',l:'Incentivos'}];
+  return `<div style="border-bottom:0.5px solid var(--color-border-tertiary);padding:0 20px;display:flex;overflow-x:auto;flex-shrink:0">
+    ${items.map(i=>`<button class="nav-btn${state.screen===i.id?' active':''}" onclick="go('${i.id}')">${i.l}</button>`).join('')}
+  </div>`;
+}
+
+function renderDashboard(){
+  const kpis=[
+    {l:'Ahorro acumulado',v:'€47,500',s:'+€4,800 este mes',c:'var(--color-text-success)'},
+    {l:'OEE actual',v:'78%',s:'+24 pts vs inicio',c:'var(--color-text-success)'},
+    {l:'Kaizens activos',v:'8',s:'3 en verificación',c:'var(--color-text-primary)'},
+    {l:'Participación',v:'67%',s:'10 de 15 empleados',c:'var(--color-text-primary)'},
+  ];
+  
+  const barHtml = DATA.oee.map((v,i)=>{
+    const h=Math.round((v-50)/35*100);
+    const isLast=i===DATA.oee.length-1;
+    return `<div class="bar-col">
+      <div style="font-size:10px;color:${isLast?'#3B6D11':'var(--color-text-secondary)'};font-weight:${isLast?500:400}">${v}%</div>
+      <div style="background:${isLast?'#3B6D11':'#C0DD97'};width:100%;height:${h}px;border-radius:3px 3px 0 0;min-height:4px"></div>
+      <div style="font-size:10px;color:var(--color-text-secondary)">${DATA.meses[i]}</div>
+    </div>`;
+  }).join('');
+
+  return `<div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+      ${kpis.map(k=>`<div class="kpi">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:5px">${k.l}</div>
+        <div style="font-size:24px;font-weight:500;margin-bottom:3px;color:${k.c}">${k.v}</div>
+        <div style="font-size:11px;color:var(--color-text-success)">${k.s}</div>
+      </div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:14px">
+      <div class="card">
+        <div style="font-size:13px;font-weight:500;margin-bottom:14px">OEE — Evolución campaña 2026</div>
+        <div class="bar-chart">${barHtml}</div>
+        <div style="margin-top:10px;padding:8px 12px;background:var(--color-background-secondary);border-radius:8px;display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--color-text-secondary)">Objetivo KAIZEN-HUB</span>
+          <span style="font-size:12px;color:#3B6D11;font-weight:500">+44 pts OEE documentados</span>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:500;margin-bottom:12px">Kaizens recientes</div>
+        ${DATA.kaizens.map((k,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;${i<4?'border-bottom:0.5px solid var(--color-border-tertiary)':''}">
+          <div>
+            <div style="font-size:12px;font-weight:500">${k.titulo}</div>
+            <div style="font-size:11px;color:var(--color-text-secondary)">${k.area}</div>
+          </div>
+          ${estadoBadge(k.estado)}
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNueva(){
+  if(state.submitted){
+    return `<div style="text-align:center;padding:40px 20px">
+      <div style="width:56px;height:56px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px;color:#3B6D11">✓</div>
+      <div style="font-size:20px;font-weight:500;margin-bottom:8px">Propuesta enviada correctamente</div>
+      <div style="color:var(--color-text-secondary);margin-bottom:8px;font-size:14px">Tu Kaizen ha sido registrado con el número:</div>
+      <div style="font-size:28px;font-weight:500;color:#3B6D11;font-family:monospace;margin-bottom:20px">KZN-2026-049</div>
+      <div style="background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:8px;padding:12px 20px;display:inline-block;margin-bottom:24px">
+        <div style="font-size:13px;color:#3B6D11">+10 puntos acreditados · Insignia "Iniciador" desbloqueada</div>
+      </div>
+      <div style="color:var(--color-text-secondary);font-size:13px;margin-bottom:24px">El Líder de Mejora Continua revisará tu propuesta en un máximo de 7 días hábiles.</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn-secondary" onclick="state.submitted=false;state.step=0;render()">Nuevo Kaizen</button>
+        <button class="btn-primary" onclick="go('activos')">Ver mis Kaizens</button>
+      </div>
+    </div>`;
+  }
+
+  const steps=['Descripción','5 Porqués','Área de impacto','Confirmación'];
+  const stepIndicator = `<div style="display:flex;margin-bottom:28px">
+    ${steps.map((s,i)=>{
+      const done=i<state.step,active=i===state.step;
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">
+        <div class="step-circle" style="background:${done||active?'#3B6D11':'var(--color-background-secondary)'};border:2px solid ${done||active?'#3B6D11':'var(--color-border-secondary)'};color:${done||active?'white':'var(--color-text-secondary)'}">
+          ${done?'✓':i+1}
+        </div>
+        <div style="font-size:11px;color:${active?'var(--color-text-primary)':'var(--color-text-secondary)'};font-weight:${active?500:400};text-align:center">${s}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  let stepContent='';
+  if(state.step===0){
+    stepContent=`
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;color:var(--color-text-secondary);display:block;margin-bottom:5px">Descripción del problema observado (observación en Gemba)</label>
+        <textarea id="desc" placeholder="Ej: Durante el molido en el boixet, se observan residuos de pasta de almendra adheridos a las paredes al finalizar cada ciclo de producción...">${state.desc}</textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label style="font-size:12px;color:var(--color-text-secondary);display:block;margin-bottom:5px">Área / Línea</label>
+          <select id="area">
+            <option value="">Seleccionar área</option>
+            <option ${state.area==='Preparación almendras'?'selected':''}>Preparación almendras</option>
+            <option ${state.area==='Preparación y cocción'?'selected':''}>Preparación y cocción</option>
+            <option ${state.area==='Moldeo y enfriamiento'?'selected':''}>Moldeo y enfriamiento</option>
+            <option ${state.area==='Corte y empacado'?'selected':''}>Corte y empacado</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--color-text-secondary);display:block;margin-bottom:5px">Gravedad inicial</label>
+          <select id="grav">
+            <option value="BAJA" ${state.grav==='BAJA'?'selected':''}>Baja — sin riesgo inmediato</option>
+            <option value="MEDIA" ${state.grav==='MEDIA'?'selected':''}>Media — impacto calidad/eficiencia</option>
+            <option value="ALTA" ${state.grav==='ALTA'?'selected':''}>Alta — riesgo personas o inocuidad</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:10px 12px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary)">
+        <div style="font-size:12px;color:var(--color-text-secondary)">Foto "Antes": En la plataforma real, adjuntar fotografía del estado actual es obligatorio antes de enviar la propuesta.</div>
+      </div>`;
+  } else if(state.step===1){
+    stepContent=`<div style="margin-bottom:14px">
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">El sistema te guía para encontrar la causa raíz sistémica, no el síntoma. La respuesta al 5.° Porqué se convierte automáticamente en el campo "Causa raíz".</div>
+      ${WHY_Q.map((q,i)=>`<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">
+        <div style="width:22px;height:22px;border-radius:50%;background:#3B6D11;display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:500;flex-shrink:0;margin-top:2px">${i+1}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">${q}</div>
+          <input type="text" id="why${i}" value="${state.whys[i]}" placeholder="${i===0?'La pasta de almendra queda adherida a las paredes del boixet':i===4?'Causa raíz que el sistema registrará automáticamente':''}">
+        </div>
+      </div>`).join('')}
+    </div>`;
+  } else if(state.step===2){
+    stepContent=`<div>
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px">Selecciona las áreas afectadas. La plataforma asignará automáticamente los recomendadores expertos del Comité Técnico.</div>
+      ${AREAS.map(a=>{
+        const checked=state.impacto.includes(a.k);
+        return `<div class="check-row ${checked?'checked':''}" onclick="toggleArea('${a.k}')">
+          <div style="width:16px;height:16px;border-radius:3px;border:1.5px solid ${checked?'#3B6D11':'var(--color-border-secondary)'};background:${checked?'#3B6D11':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+            ${checked?'<span style="color:white;font-size:10px">✓</span>':''}
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:${checked?500:400}">${a.l}</div>
+            <div style="font-size:11px;color:var(--color-text-secondary)">${a.s}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  } else {
+    const recDesc=state.desc||'Residuos de pasta de almendra adheridos a paredes del boixet al finalizar ciclo de producción';
+    const recArea=state.area||'Preparación y cocción';
+    const recRaiz=state.whys[4]||'No existe protocolo estandarizado de ajuste de velocidad final en boixet: cada maestro usa su propio criterio';
+    const recomendadores=state.impacto.includes('eficiencia')||state.impacto.includes('maquinaria')||state.impacto.length===0?'Jefe de Producción, Jefe de Mantenimiento':'Según áreas seleccionadas';
+    stepContent=`<div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:14px">Confirma tu propuesta antes de enviar</div>
+      <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Descripción</div>
+        <div style="font-size:13px">${recDesc}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Área</div>
+          <div style="font-size:13px">${recArea}</div>
+        </div>
+        <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Gravedad</div>
+          <div style="font-size:13px">${state.grav}</div>
+        </div>
+      </div>
+      <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">Causa raíz identificada (5.° Porqué)</div>
+        <div style="font-size:13px">${recRaiz}</div>
+      </div>
+      <div style="background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:8px;padding:12px">
+        <div style="font-size:12px;color:#3B6D11">Recomendadores asignados automáticamente: ${recomendadores}</div>
+      </div>
+    </div>`;
+  }
+
+  return `<div>
+    ${stepIndicator}
+    <div class="card" style="margin-bottom:16px">${stepContent}</div>
+    <div style="display:flex;justify-content:space-between">
+      <button class="btn-secondary" onclick="stepBack()" ${state.step===0?'disabled style="opacity:0.4;cursor:default"':''}>Anterior</button>
+      <button class="btn-primary" onclick="stepNext()">${state.step<3?'Siguiente →':'Enviar propuesta'}</button>
+    </div>
+  </div>`;
+}
+
+function renderActivos(){
+  const filters=['Todos','EJECUCIÓN','VALIDACIÓN','APROBADO','CERRADO'];
+  const filtered=state.filter==='Todos'?DATA.kaizens:DATA.kaizens.filter(k=>k.estado===state.filter);
+  return `<div>
+    <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">
+      ${filters.map(f=>`<button class="filter-btn${state.filter===f?' active':''}" onclick="setFilter('${f}')">${f}</button>`).join('')}
+    </div>
+    ${filtered.map(k=>`<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="font-size:11px;color:var(--color-text-secondary);font-family:monospace">${k.id}</span>
+            ${estadoBadge(k.estado)}
+          </div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:3px">${k.titulo}</div>
+          <div style="font-size:12px;color:var(--color-text-secondary)">${k.area} · Fase: ${k.estado}${k.dias>0?' · '+k.dias+' días en esta fase':''}</div>
+        </div>
+        <div style="text-align:right;margin-left:12px;flex-shrink:0">
+          <div style="font-size:20px;font-weight:500;color:var(--color-text-success)">${k.ahorro}</div>
+          <div style="font-size:11px;color:var(--color-text-secondary)">ahorro estimado</div>
+        </div>
+      </div>
+      ${k.estado!=='CERRADO'?`<div class="progress-track" style="margin-top:10px"><div style="background:#3B6D11;height:4px;border-radius:4px;width:${k.pct}%"></div></div>`:'<div style="display:flex;align-items:center;gap:5px;margin-top:8px"><span style="font-size:12px;color:#3B6D11">Kaizen cerrado y archivado · Publicado en HUB Sectorial</span></div>'}
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderHub(){
+  return `<div>
+    <div style="background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:8px;padding:10px 14px;margin-bottom:16px">
+      <div style="font-size:12px;color:#3B6D11">Todas las fichas están anonimizadas: sin datos de empresa, empleados ni recetas. Solo conocimiento de proceso compartible entre empresas del clúster de Jijona.</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      ${DATA.hub.map(c=>`<div class="hub-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="badge badge-blue">${c.cat}</span>
+          <span style="font-size:10px;color:var(--color-text-secondary);font-family:monospace">${c.id}</span>
+        </div>
+        <div style="font-size:13px;font-weight:500">${c.titulo}</div>
+        <div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:2px">Problema:</div>
+          <div style="font-size:12px">${c.problema}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:2px">Solución:</div>
+          <div style="font-size:12px">${c.solucion}</div>
+        </div>
+        <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:10px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <span style="font-size:13px;font-weight:500;color:var(--color-text-success)">${c.resultado}</span>
+            <div style="font-size:11px;color:var(--color-text-secondary)">${c.maquina}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:18px;font-weight:500;color:${state.replicated[c.id]?'#3B6D11':'var(--color-text-secondary)'}">${c.rep+(state.replicated[c.id]?1:0)}×</div>
+            <div style="font-size:10px;color:var(--color-text-secondary)">replicado</div>
+          </div>
+        </div>
+        <button class="btn-${state.replicated[c.id]?'secondary':'primary'}" style="font-size:11px;padding:6px;width:100%" onclick="replicate('${c.id}')">
+          ${state.replicated[c.id]?'✓ Replicado en mi planta':'Marcar como replicado (+200 pts)'}
+        </button>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderIncentivos(){
+  const pct=Math.round((640-0)/(750-0)*100);
+  return `<div>
+    <div style="background:#EAF3DE;border:0.5px solid #C0DD97;border-radius:12px;padding:20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:12px;color:#3B6D11;margin-bottom:4px">Mis puntos acumulados</div>
+        <div style="font-size:36px;font-weight:500;color:#27500A;margin-bottom:8px">640 pts</div>
+        <div style="display:flex;gap:6px">
+          <span class="badge badge-green">Iniciador</span>
+          <span class="badge badge-green">5 Kaizens</span>
+          <span class="badge badge-green">3.° en planta</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:#3B6D11;margin-bottom:4px">Próximo nivel</div>
+        <div style="font-size:15px;font-weight:500;color:#27500A;margin-bottom:10px">Implementador (750 pts)</div>
+        <div style="background:#C0DD97;border-radius:4px;height:8px;width:180px">
+          <div style="background:#3B6D11;height:8px;border-radius:4px;width:${pct}%"></div>
+        </div>
+        <div style="font-size:11px;color:#3B6D11;margin-top:4px">Faltan 110 pts para el siguiente nivel</div>
+      </div>
+    </div>
+    <div style="font-size:14px;font-weight:500;margin-bottom:12px">Ranking de planta — Campaña 2026</div>
+    ${DATA.ranking.map(r=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:8px;background:${r.pos===3?'#EAF3DE':'var(--color-background-primary)'};border:${r.pos===3?'1.5px solid #C0DD97':'0.5px solid var(--color-border-tertiary)'};border-radius:10px">
+      <div style="font-size:16px;font-weight:500;color:${r.pos===1?'#BA7517':r.pos===2?'#888780':'var(--color-text-secondary)'};min-width:22px">#${r.pos}</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">${r.n.split(' ').map(x=>x[0]).join('')}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:${r.pos===3?500:400}">${r.n}${r.pos===3?' (Tú)':''}</div>
+        <div style="font-size:11px;color:var(--color-text-secondary)">${r.area} · ${r.k} Kaizens</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:16px;font-weight:500">${r.pts}</div>
+        <div style="font-size:10px;color:var(--color-text-secondary)">pts</div>
+      </div>
+      <span class="badge badge-gray">${r.ins}</span>
+    </div>`).join('')}
+    <div style="margin-top:16px;padding:12px 16px;background:var(--color-background-secondary);border-radius:10px;border:0.5px solid var(--color-border-tertiary)">
+      <div style="font-size:12px;font-weight:500;margin-bottom:8px">Próximas recompensas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        ${[{pts:'+50',a:'Kaizen cerrado con Visto Bueno'},{pts:'+100',a:'Ahorro calculado >€5.000'},{pts:'+200',a:'Mejora replicada en HUB ×3'}].map(r=>`<div style="padding:10px;background:var(--color-background-primary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);text-align:center">
+          <div style="font-size:18px;font-weight:500;color:#3B6D11">${r.pts}</div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px">${r.a}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+const titles={dashboard:'Panel de control',nueva:'Nueva propuesta Kaizen',activos:'Kaizens activos',hub:'HUB Sectorial Jijona',incentivos:'Incentivos y reconocimiento'};
+
+function render(){
+  let content='';
+  if(state.screen==='dashboard') content=renderDashboard();
+  else if(state.screen==='nueva') content=renderNueva();
+  else if(state.screen==='activos') content=renderActivos();
+  else if(state.screen==='hub') content=renderHub();
+  else content=renderIncentivos();
+  
+  document.getElementById('app').innerHTML=`
+    ${renderHeader()}
+    ${renderNav()}
+    <div style="padding:18px 20px">
+      <div style="font-size:17px;font-weight:500;margin-bottom:16px">${titles[state.screen]}</div>
+      ${content}
+    </div>
+  `;
+}
+
+function go(s){
+  state.screen=s;
+  if(s==='nueva'){state.submitted=false;state.step=0;}
+  render();
+}
+function setFilter(f){state.filter=f;render();}
+function toggleArea(k){
+  state.impacto=state.impacto.includes(k)?state.impacto.filter(x=>x!==k):[...state.impacto,k];
+  render();
+}
+function replicate(id){
+  if(!state.replicated[id]){state.replicated[id]=true;render();}
+}
+function stepBack(){if(state.step>0){saveFormData();state.step--;render();}}
+function stepNext(){saveFormData();if(state.step<3){state.step++;render();}else{state.submitted=true;render();}}
+function saveFormData(){
+  if(state.step===0){
+    const d=document.getElementById('desc');
+    const a=document.getElementById('area');
+    const g=document.getElementById('grav');
+    if(d)state.desc=d.value;
+    if(a)state.area=a.value;
+    if(g)state.grav=g.value;
+  } else if(state.step===1){
+    for(let i=0;i<5;i++){const el=document.getElementById('why'+i);if(el)state.whys[i]=el.value;}
+  }
+}
+
+render();
+</script>
